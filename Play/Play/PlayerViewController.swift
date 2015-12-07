@@ -23,6 +23,7 @@ class PlayerViewController: UIViewController {
     
     var artistLabel: UILabel!
     var titleLabel: UILabel!
+    var current: NSURL! = nil
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -44,7 +45,7 @@ class PlayerViewController: UIViewController {
         let height = UIScreen.mainScreen().bounds.size.height
         let offset = height - width
         
-    
+        currentIndex = currentIndex + 5
         trackImageView = UIImageView(frame: CGRect(x: 0.0, y: 0.0,
             width: width, height: width))
         trackImageView.contentMode = UIViewContentMode.ScaleAspectFill
@@ -130,7 +131,17 @@ class PlayerViewController: UIViewController {
         let track = tracks[currentIndex]
         let url = NSURL(string: "https://api.soundcloud.com/tracks/\(track.id)/stream?client_id=\(clientID)")!
         // FILL ME IN
-    
+        if current != url {
+            player = AVPlayer(playerItem: AVPlayerItem(URL: url))
+        }
+        current = url
+        if player.rate != 0 {
+            player.pause()
+            playPauseButton.setImage(UIImage(named: "play.png"), forState: UIControlState.Normal)
+        } else {
+            player.play()
+            playPauseButton.setImage(UIImage(named: "pause.png"), forState: UIControlState.Normal)
+        }
     }
     
     /* 
@@ -140,7 +151,21 @@ class PlayerViewController: UIViewController {
      * Remember to update the currentIndex
      */
     func nextTrackTapped(sender: UIButton) {
-    
+        if currentIndex < tracks.count-1 {
+            currentIndex = currentIndex + 1
+            loadTrackElements()
+            let r = player.rate
+            let path = NSBundle.mainBundle().pathForResource("Info", ofType: "plist")
+            let clientID = NSDictionary(contentsOfFile: path!)?.valueForKey("client_id") as! String
+            let track = tracks[currentIndex]
+            let url = NSURL(string: "https://api.soundcloud.com/tracks/\(track.id)/stream?client_id=\(clientID)")!
+            
+            player = AVPlayer(playerItem: AVPlayerItem(URL: url))
+            current = url
+            if r != 0 {
+                player.play()
+            }
+        }
     }
 
     /*
@@ -154,7 +179,23 @@ class PlayerViewController: UIViewController {
      */
 
     func previousTrackTapped(sender: UIButton) {
-    
+        let r = player.rate
+        let path = NSBundle.mainBundle().pathForResource("Info", ofType: "plist")
+        let clientID = NSDictionary(contentsOfFile: path!)?.valueForKey("client_id") as! String
+        let time = Int(player.currentTime().value)/Int(player.currentTime().timescale)
+        if (time > 3 || currentIndex < 0) {
+            player.seekToTime(CMTime(seconds: 0, preferredTimescale: 1))
+        } else {
+            currentIndex = currentIndex - 1
+            loadTrackElements()
+            let track = tracks[currentIndex]
+            let url = NSURL(string: "https://api.soundcloud.com/tracks/\(track.id)/stream?client_id=\(clientID)")!
+            current = url
+            player = AVPlayer(playerItem: AVPlayerItem(URL: url))
+            if r != 0 {
+                player.play()
+            }
+        }
     }
     
     
